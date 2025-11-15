@@ -1,0 +1,8 @@
+[network]
+udp_port = 48838
+known_peers = ["127.0.0.1:48839"]
+
+[compute]
+max_tasks = 1
+allow_file_io = true
+allow_networking = true

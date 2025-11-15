@@ -1,0 +1,11 @@
+[package]
+name = "pyrite-network"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.100"
+ciborium = "0.2.2"
+log = "0.4.28"
+serde = { version = "1.0.228", features = ["derive"] }
+thiserror = "2.0.17"
