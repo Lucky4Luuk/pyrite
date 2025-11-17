@@ -12,15 +12,26 @@ fn main() {
     pretty_env_logger::formatted_timed_builder()
         .filter_level(log::LevelFilter::Info)
         .init();
-    info!("Hello, world!");
+    info!("Hello, node!");
 
     let config: Config = toml::from_str(
         &std::fs::read_to_string("config.toml").expect("Failed to read config.toml!"),
     )
     .expect("Failed to parse config.toml!");
 
-    let node = PyriteNode::new(config.network.udp_port, config.network.known_peers)
+    let mut node = PyriteNode::new(config.network.udp_port, config.network.known_peers)
         .expect("Failed to create node!");
 
     node.start();
+
+    loop {
+        if let Some(msg) = node.process() {
+            match msg {
+                NetworkMessage::TaskRequest { req } => {
+                    info!("Incoming task request:\n{:#?}", req);
+                }
+                _ => {}
+            }
+        }
+    }
 }

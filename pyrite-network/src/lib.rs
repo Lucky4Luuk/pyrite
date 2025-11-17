@@ -7,7 +7,7 @@ use std::net::SocketAddr;
 
 mod connection;
 
-use connection::*;
+pub use connection::*;
 
 pub struct PyriteNode {
     network_connection: NetworkConnection,
@@ -23,7 +23,7 @@ impl PyriteNode {
         })
     }
 
-    pub fn start(mut self) -> ! {
+    pub fn start(&mut self) {
         // Jumpstart the network connection
         if let Err(e) = self
             .network_connection
@@ -34,13 +34,15 @@ impl PyriteNode {
         }
 
         info!("Node discovery started...");
+    }
 
-        // Processing loop
-        loop {
-            match self.network_connection.process() {
-                Err(e) => error!("{e}"),
-                Ok(()) => {}
+    pub fn process(&mut self) -> Option<NetworkMessage> {
+        match self.network_connection.process() {
+            Err(e) => {
+                error!("{e}");
+                None
             }
+            Ok(m) => m,
         }
     }
 }

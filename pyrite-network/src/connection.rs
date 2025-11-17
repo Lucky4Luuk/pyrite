@@ -17,12 +17,21 @@ pub enum RecvMessageError {
     CiboriumError(Error<IoError>),
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub enum NetworkMessage {
     KeepAlive,
     NewNode { addr: SocketAddr },
     RequestPeerList,
     PeerList { peers: Vec<SocketAddr> },
+    TaskRequest { req: TaskRequest },
+}
+
+#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
+pub struct TaskRequest {
+    pub needs_file_io: bool,
+    pub needs_networking: bool,
+    // Size in bytes
+    pub task_size: u64,
 }
 
 pub struct NetworkConnection {
@@ -30,7 +39,7 @@ pub struct NetworkConnection {
     read_buf: [u8; 65535],
     last_keep_alive: Instant,
 
-    peers: HashMap<SocketAddr, Instant>,
+    pub peers: HashMap<SocketAddr, Instant>,
 }
 
 impl NetworkConnection {
@@ -105,13 +114,20 @@ impl NetworkConnection {
         Ok(())
     }
 
-    pub fn process(&mut self) -> anyhow::Result<()> {
+    /// Returns the latest event, regardless of whether it has been
+    /// processed or not.
+    /// NOTE: This will handle keeping the network alive! You do not
+    ///       have to worry about that!
+    pub fn process(&mut self) -> anyhow::Result<Option<NetworkMessage>> {
         if self.last_keep_alive.elapsed().as_secs() > 30 {
             self.send_keep_alive()?;
         }
 
+        let mut ret_msg = None;
+
         match self.recv_message() {
             Ok((msg, addr)) => {
+                ret_msg = Some(msg.clone());
                 if let Some(keep_alive_time) = self.peers.get_mut(&addr) {
                     *keep_alive_time = Instant::now();
                 } else {
@@ -140,7 +156,8 @@ impl NetworkConnection {
                     }
 
                     NetworkMessage::KeepAlive => {} // Ignore any keep alive packets, any packet updates keep alive
-                    _ => error!("Unsupported network message!"),
+                    // _ => error!("Unsupported network message!"),
+                    _ => {}
                 }
             }
             Err(e) => match e {
@@ -155,6 +172,6 @@ impl NetworkConnection {
             },
         }
 
-        Ok(())
+        Ok(ret_msg)
     }
 }
