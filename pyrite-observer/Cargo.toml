@@ -1,0 +1,19 @@
+[package]
+name = "pyrite-observer"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+pyrite-network = { path = "../pyrite-network" }
+
+anyhow = "1.0.100"
+ciborium = "0.2.2"
+log = "0.4.28"
+pretty_env_logger = "0.5.0"
+serde = { version = "1.0.228", features = ["derive"] }
+thiserror = "2.0.17"
+toml = "0.9.8"
+wasmtime = { version = "36.0.3", default-features = false, features = ["async", "cache", "component-model", "cranelift", "demangle", "gc", "gc-drc", "gc-null", "parallel-compilation", "pooling-allocator", "runtime", "stack-switching", "std", "threads"] }
+wasmtime-wasi = "36.0.3"
+ratatui = "0.29.0"
+crossterm = "0.29.0"

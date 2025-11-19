@@ -114,20 +114,28 @@ impl NetworkConnection {
         Ok(())
     }
 
-    /// Returns the latest event, regardless of whether it has been
+    /// Returns the latest message, regardless of whether it has been
     /// processed or not.
     /// NOTE: This will handle keeping the network alive! You do not
     ///       have to worry about that!
     pub fn process(&mut self) -> anyhow::Result<Option<NetworkMessage>> {
+        // Ensure we send a keep alive if it has been too long
         if self.last_keep_alive.elapsed().as_secs() > 30 {
             self.send_keep_alive()?;
         }
+
+        // Check most recent keep alive ping from others
+        self.peers
+            .retain(|_, last_ping| last_ping.elapsed().as_secs() < 30 * 8);
 
         let mut ret_msg = None;
 
         match self.recv_message() {
             Ok((msg, addr)) => {
                 ret_msg = Some(msg.clone());
+                // If any message comes in from an address, update the
+                // most recent keep alive ping time. If we do not
+                // know the address yet, pretend it's a new node!
                 if let Some(keep_alive_time) = self.peers.get_mut(&addr) {
                     *keep_alive_time = Instant::now();
                 } else {
